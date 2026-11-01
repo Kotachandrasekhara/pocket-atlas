@@ -28,7 +28,7 @@ jobs:
       - name: Collect the site files
         run: |
           mkdir _site
-          cp index.html _site/
+          rsync -a --exclude='.git' --exclude='.github' --exclude='_site' --exclude='README.md' ./ _site/
           touch _site/.nojekyll
 
       - name: Upload the site
