@@ -1,0 +1,6 @@
+Fonts bundled in this app are licensed under the SIL Open Font License, Version 1.1 (https://openfontlicense.org).
+
+Baloo 2: Copyright 2019 The Baloo 2 Project Authors (https://github.com/EkType/Baloo2)
+Lexend:  Copyright 2019 The Lexend Project Authors (https://github.com/googlefonts/lexend)
+
+Packaged from the Fontsource project (https://fontsource.org).

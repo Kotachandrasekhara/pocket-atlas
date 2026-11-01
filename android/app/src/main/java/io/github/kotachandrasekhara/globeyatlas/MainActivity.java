@@ -1,0 +1,5 @@
+package io.github.kotachandrasekhara.globeyatlas;
+
+import com.getcapacitor.BridgeActivity;
+
+public class MainActivity extends BridgeActivity {}

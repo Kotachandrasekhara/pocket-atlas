@@ -1,0 +1,60 @@
+name: Build iOS app
+
+# Builds the iPhone and iPad app on a Mac in the cloud on every push to main.
+# This proves the app compiles. The file it produces runs in the Xcode Simulator.
+# Putting the app on a real iPhone or in TestFlight needs an Apple Developer
+# account, see the README.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios
+  cancel-in-progress: true
+
+jobs:
+  simulator-build:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Copy the web app into the iOS project
+        run: npx cap sync ios
+
+      - name: Build for the iOS Simulator
+        run: |
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Zip the simulator app
+        run: |
+          cd build/Build/Products/Debug-iphonesimulator
+          zip -r -q "$GITHUB_WORKSPACE/globey-atlas-ios-simulator.zip" App.app
+
+      - name: Keep a copy with this run
+        uses: actions/upload-artifact@v4
+        with:
+          name: globey-atlas-ios-simulator
+          path: globey-atlas-ios-simulator.zip

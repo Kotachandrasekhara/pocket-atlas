@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Pocket Atlas</title>
+<title>Globey Atlas</title>
 <meta name="description" content="Daily geography games and flag and capital quizzes for young explorers.">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="48x48">
@@ -11,10 +11,12 @@
 <link rel="manifest" href="site.webmanifest">
 <meta name="theme-color" content="#E4F1F4" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0A1C27" media="(prefers-color-scheme: dark)">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Lexend:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+/* Fonts are bundled with the app so it looks the same offline. */
+@font-face{font-family:'Baloo 2';font-style:normal;font-weight:600;font-display:swap;src:url(fonts/baloo-2-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Baloo 2';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/baloo-2-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'Baloo 2';font-style:normal;font-weight:800;font-display:swap;src:url(fonts/baloo-2-latin-800-normal.woff2) format('woff2')}
+@font-face{font-family:'Lexend';font-style:normal;font-weight:100 900;font-display:swap;src:url(fonts/lexend-latin-wght-normal.woff2) format('woff2')}
 /* Layout: a chart table. Left-aligned hero, chunky game cards in a grid, quiz screens as one focused panel. */
 :root{
   --bg:#E4F1F4; --grid:rgba(11,110,138,.08); --surface:#FFFFFF; --soft:#F1F8FA;
@@ -49,9 +51,11 @@ body{
   font-family:var(--body); font-size:17px; line-height:1.5;
   background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
   background-size:44px 44px; background-attachment:fixed;
-  padding-left:max(16px,env(safe-area-inset-left,0px));
-  padding-right:max(16px,env(safe-area-inset-right,0px));
-  padding-block:0 32px;
+  /* Keep clear of notches and system bars. env() is used on the web and iOS, the --safe-area vars are set by the Android app. */
+  padding-left:max(16px,env(safe-area-inset-left,0px),var(--safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px),var(--safe-area-inset-right,0px));
+  padding-top:max(env(safe-area-inset-top,0px),var(--safe-area-inset-top,0px));
+  padding-bottom:calc(32px + max(env(safe-area-inset-bottom,0px),var(--safe-area-inset-bottom,0px)));
 }
 .wrap{max-width:980px;margin:0 auto}
 h1,h2,h3{font-family:var(--display);line-height:1.1;margin:0;text-wrap:balance}
@@ -308,16 +312,16 @@ input.sl:disabled{opacity:.55;cursor:default}
 <body>
 <div class="wrap">
   <header class="top">
-    <button class="brand" id="brand" aria-label="Pocket Atlas, go to the home screen">
-      <svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="var(--accent)"/><path d="M20 6l5.5 14L20 34l-5.5-14z" fill="#fff"/><path d="M20 6l5.5 14h-11z" fill="#C9432A"/><circle cx="20" cy="20" r="2.2" fill="var(--accent)"/></svg>
-      <span>Pocket Atlas</span>
+    <button class="brand" id="brand" aria-label="Globey Atlas, go to the home screen">
+      <svg viewBox="0 0 64 64" width="42" height="42" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#2E9BDA" stroke="#1B6FA8" stroke-width="3"/><path d="M11 24c4-7 13-8 16-3 2 4-2 6-1 10 1 4-5 6-9 4-5-2-10-6-6-11z" fill="#6CC04A"/><path d="M39 10c7-2 13 2 12 8-1 5-5 5-6 9-1 4-7 3-8-1-1-4-4-6-3-10 1-2 3-4 5-6z" fill="#6CC04A"/><circle cx="23" cy="34" r="6.5" fill="#fff"/><circle cx="41" cy="34" r="6.5" fill="#fff"/><circle cx="24.5" cy="35.5" r="3.2" fill="#16222B"/><circle cx="42.5" cy="35.5" r="3.2" fill="#16222B"/><path d="M22 45q10 9 20 0" fill="none" stroke="#16222B" stroke-width="3.2" stroke-linecap="round"/></svg>
+      <span>Globey Atlas</span>
     </button>
     <div class="stats" id="stats"></div>
   </header>
   <main id="app" tabindex="-1"></main>
 </div>
 <footer>
-  Pocket Atlas is a home project made for one young explorer. All flags are built into this file, so it works without internet. Country sizes and populations are rounded.
+  Globey Atlas is a home project made for one young explorer. All flags are built into this file, so it works without internet. Country sizes and populations are rounded.
 </footer>
 <canvas id="confetti" aria-hidden="true"></canvas>
 
@@ -633,10 +637,31 @@ const ICONS={
 };
 const STAR='<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>';
 
+// Inside the Android and iOS apps, progress is also copied to the phone's own storage,
+// so stars survive even if the system clears the web storage.
+const NATIVE=(()=>{try{return !!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());}catch(e){return false;}})();
+const nativePrefs=()=>{try{return NATIVE&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Preferences||null;}catch(e){return null;}};
+async function restoreFromNative(){
+  const P=nativePrefs();if(!P)return;
+  try{
+    const {keys}=await P.keys();
+    for(const k of keys){
+      if(!k.startsWith('pa.')||localStorage.getItem(k)!==null)continue;
+      const {value}=await P.get({key:k});
+      if(value!=null)localStorage.setItem(k,value);
+    }
+  }catch(e){}
+}
 const mem={};
 const store={
   get(k,d){ if(k in mem)return mem[k]; try{const v=localStorage.getItem('pa.'+k); return v==null?d:JSON.parse(v);}catch(e){return d;} },
-  set(k,v){ mem[k]=v; try{localStorage.setItem('pa.'+k,JSON.stringify(v));}catch(e){} }
+  set(k,v){
+    mem[k]=v;
+    const s=JSON.stringify(v);
+    try{localStorage.setItem('pa.'+k,s);}catch(e){}
+    const P=nativePrefs();
+    if(P){try{P.set({key:'pa.'+k,value:s}).catch(()=>{});}catch(e){}}
+  }
 };
 function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 function seedFrom(s){let x=1779033703^s.length;for(let i=0;i<s.length;i++){x=Math.imul(x^s.charCodeAt(i),3432918353);x=x<<13|x>>>19;}x=Math.imul(x^x>>>16,2246822507);x=Math.imul(x^x>>>13,3266489909);return(x^=x>>>16)>>>0;}
@@ -712,7 +737,14 @@ function confetti(){
 /* ---------- View management ---------- */
 const app=document.getElementById('app');
 let cleanup=null;
-function setView(el,fn){
+// The phone's Back button should return to the home screen, not close the app.
+let inGame=false,ignorePop=false;
+function setView(el,fn,isHome){
+  if(isHome){
+    if(inGame){inGame=false;ignorePop=true;try{history.back();}catch(e){ignorePop=false;}}
+  }else if(!inGame){
+    try{history.pushState({g:1},'');inGame=true;}catch(e){}
+  }
   if(cleanup){try{cleanup();}catch(e){}}
   cleanup=fn||null;
   try{speechSynthesis.cancel();}catch(e){}
@@ -880,7 +912,7 @@ function renderHome(){
     if(today()!==date){renderHome();return;}
     cd.textContent=hms(untilMidnight());
   },1000);
-  setView(el,()=>clearInterval(timer));
+  setView(el,()=>clearInterval(timer),true);
 }
 
 /* ---------- Quiz (flags and capitals) ---------- */
@@ -1558,8 +1590,16 @@ function startPop({daily,region}){
 
 /* ---------- Boot ---------- */
 document.getElementById('brand').addEventListener('click',renderHome);
-renderStats();
-renderHome();
+window.addEventListener('popstate',()=>{
+  if(ignorePop){ignorePop=false;return;}
+  if(inGame){inGame=false;renderHome();}
+});
+restoreFromNative().then(()=>{renderStats();renderHome();});
+
+// Offline support on the website. The mobile apps already carry every file inside them.
+if('serviceWorker' in navigator&&!NATIVE&&/^https?:$/.test(location.protocol)){
+  window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
+}
 })();
 </script>
 </body>

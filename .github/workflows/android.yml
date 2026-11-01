@@ -1,0 +1,69 @@
+name: Build Android app
+
+# Builds an installable Android app (.apk) on every push to main.
+# The newest build is attached to the "latest-android" release, so you can
+# download it straight from your phone: Releases > "Globey Atlas for Android".
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Android tools
+        uses: android-actions/setup-android@v3
+
+      - name: Copy the web app into the Android project
+        run: npx cap sync android
+
+      - name: Build the app
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Name the file
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk globey-atlas-android.apk
+
+      - name: Keep a copy with this run
+        uses: actions/upload-artifact@v4
+        with:
+          name: globey-atlas-android
+          path: globey-atlas-android.apk
+
+      - name: Publish to the latest-android release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest-android --cleanup-tag --yes || true
+          gh release create latest-android globey-atlas-android.apk \
+            --prerelease \
+            --target "${{ github.sha }}" \
+            --title "Globey Atlas for Android (latest build)" \
+            --notes "Newest test build of Globey Atlas for Android, made from commit ${GITHUB_SHA::7}. Download globey-atlas-android.apk on your phone and open it. Android will ask you to allow installing from this source the first time."

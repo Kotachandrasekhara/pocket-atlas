@@ -1,6 +1,7 @@
-name: Deploy to GitHub Pages
+name: Publish website (GitHub Pages)
 
-# Every push to main publishes the site. You can also run it by hand from the Actions tab.
+# Every push to main publishes the website from the www folder.
+# You can also run it by hand from the Actions tab.
 on:
   push:
     branches: [main]
@@ -28,7 +29,9 @@ jobs:
       - name: Collect the site files
         run: |
           mkdir _site
-          rsync -a --exclude='.git' --exclude='.github' --exclude='_site' --exclude='README.md' ./ _site/
+          cp -r www/. _site/
+          # Give the offline cache a new name for every release.
+          sed -i "s/__BUILD__/${GITHUB_SHA::8}/" _site/sw.js
           touch _site/.nojekyll
 
       - name: Upload the site
